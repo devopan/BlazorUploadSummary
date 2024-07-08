@@ -1,0 +1,98 @@
+﻿@page "/"
+@using Microsoft.VisualBasic.FileIO
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+<h1>Welcome to the Blazor File Upload Summary app!</h1>
+
+<p>
+    <label>
+        Upload a '.csv' file of your choosing:
+        <InputFile OnChange="LoadFiles" multiple />
+    </label>
+</p>
+
+
+<table>
+
+    <tr>
+        @foreach (var columnHeader in headerList)
+        {
+            <th>@columnHeader</th>
+        }
+    </tr>
+    @foreach (var dataRow in dataList)
+    {
+        <tr>
+            @foreach (var dataRowItem in dataRow)
+            {
+                <th>@dataRowItem</th>
+            }
+        </tr>
+    }
+
+</table>
+
+
+@code {
+    List<string> headerList = new List<string>();
+    List<List<string>> dataList = new List<List<string>>();
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var trustedFileName = Path.GetRandomFileName();
+            var path = Path.Combine(Environment.CurrentDirectory, trustedFileName);
+
+            await using FileStream fs = new(path, FileMode.Create);
+            await e.File.OpenReadStream().CopyToAsync(fs);
+            fs.Position = 0;
+
+            using (var reader = new TextFieldParser(fs, System.Text.Encoding.GetEncoding("iso-8859-1")))
+            {
+                string row;
+                int counter = 0;
+                while ((row = reader.ReadLine()) != null)
+                {
+                    if (counter == 0)
+                    {
+                        headerList = row.Split(',').ToList();
+                    }
+                    else
+                    {
+                        var dataText = row.Split(',').ToList();
+                        decimal decimalValue;
+                        var result = "";
+
+                        foreach (var dataItem in dataText)
+                        {
+                            result = Decimal.TryParse(dataItem, out decimalValue) ? decimalValue.ToString() : dataItem;
+                        }
+
+                        dataList.Add(dataText);
+                    }
+                    counter++;
+                }
+            }
+
+            // cleanup
+            if (File.Exists(Path.Combine(path)))
+            {
+                // If file found, delete it
+                File.Delete(Path.Combine(path));
+                System.Diagnostics.Debug.Print("Cleanup finished.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // handle / log exception
+            throw;
+        }
+        finally
+        {
+            // other cleanup
+        }
+    }
+}
