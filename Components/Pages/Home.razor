@@ -62,16 +62,7 @@
                     }
                     else
                     {
-                        var dataText = row.Split(',').ToList();
-                        decimal decimalValue;
-                        var result = "";
-
-                        foreach (var dataItem in dataText)
-                        {
-                            result = Decimal.TryParse(dataItem, out decimalValue) ? decimalValue.ToString() : dataItem;
-                        }
-
-                        dataList.Add(dataText);
+                        dataList.Add(row.Split(',').ToList());
                     }
                     counter++;
                 }
